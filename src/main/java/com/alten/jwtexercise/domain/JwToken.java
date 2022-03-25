@@ -5,7 +5,7 @@ import javax.persistence.*;
 
 @Entity
 @Table(name = "jwt_list")
-public class JwtList {
+public class JwToken {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,10 +15,10 @@ public class JwtList {
     @Column(name = "token")
     private String token;
 
-    public JwtList() {
+    public JwToken() {
     }
 
-    public JwtList(String token) {
+    public JwToken(String token) {
         this.token = token;
     }
 
@@ -40,7 +40,7 @@ public class JwtList {
 
     @Override
     public String toString() {
-        return "JwtList{" +
+        return "JwToken{" +
                 "id=" + id +
                 ", token='" + token + '\'' +
                 '}';

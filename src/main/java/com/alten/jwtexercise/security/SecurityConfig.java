@@ -3,7 +3,7 @@ package com.alten.jwtexercise.security;
 import com.alten.jwtexercise.filters.AuthenticationFilter;
 import com.alten.jwtexercise.filters.AuthorizationFilter;
 import com.alten.jwtexercise.jwt.JwtConfig;
-import com.alten.jwtexercise.service.jwtlist.JwtListService;
+import com.alten.jwtexercise.service.jwtlist.JwTokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,14 +28,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserDetailsService userDetailsService;
     private final JwtConfig jwtConfig;
-    private final JwtListService jwtListService;
+    private final JwTokenService jwTokenService;
 
     @Autowired
-    public SecurityConfig(BCryptPasswordEncoder passwordEncoder, UserDetailsService userDetailsService, JwtConfig jwtConfig, JwtListService jwtListService) {
+    public SecurityConfig(BCryptPasswordEncoder passwordEncoder, UserDetailsService userDetailsService, JwtConfig jwtConfig, JwTokenService jwTokenService) {
         this.passwordEncoder = passwordEncoder;
         this.userDetailsService = userDetailsService;
         this.jwtConfig = jwtConfig;
-        this.jwtListService = jwtListService;
+        this.jwTokenService = jwTokenService;
     }
 
     @Override
@@ -46,13 +46,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable();
-        AuthenticationFilter authenticationFilter = new AuthenticationFilter(authenticationManagerBean(), jwtConfig, jwtListService);
+        AuthenticationFilter authenticationFilter = new AuthenticationFilter(authenticationManagerBean(), jwtConfig, jwTokenService);
         authenticationFilter.setFilterProcessesUrl("/authn");
 
         http.sessionManagement().sessionCreationPolicy(STATELESS);
         http.authorizeRequests().anyRequest().authenticated();
         http.addFilter(authenticationFilter)
-            .addFilterBefore(new AuthorizationFilter(jwtConfig, jwtListService), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new AuthorizationFilter(jwtConfig, jwTokenService), UsernamePasswordAuthenticationFilter.class);
     }
 
     @Bean

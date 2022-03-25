@@ -1,8 +1,7 @@
 package com.alten.jwtexercise.filters;
 
-import com.alten.jwtexercise.exception.MyCustomException;
 import com.alten.jwtexercise.jwt.JwtConfig;
-import com.alten.jwtexercise.service.jwtlist.JwtListService;
+import com.alten.jwtexercise.service.jwtlist.JwTokenService;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -32,12 +31,12 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class AuthorizationFilter extends OncePerRequestFilter {
 
     private final JwtConfig jwtConfig;
-    private final JwtListService jwtListService;
+    private final JwTokenService jwTokenService;
 
     @Autowired
-    public AuthorizationFilter(JwtConfig jwtConfig, JwtListService jwtListService) {
+    public AuthorizationFilter(JwtConfig jwtConfig, JwTokenService jwTokenService) {
         this.jwtConfig = jwtConfig;
-        this.jwtListService = jwtListService;
+        this.jwTokenService = jwTokenService;
     }
 
     @Override
@@ -49,7 +48,7 @@ public class AuthorizationFilter extends OncePerRequestFilter {
             String authorizationHeader = request.getHeader(AUTHORIZATION);
             if(authorizationHeader!=null && authorizationHeader.startsWith("Bearer ")){
                  tokenJwt = authorizationHeader.substring("Bearer ".length());
-                if(jwtListService.tokenExists(tokenJwt)) {
+                if(jwTokenService.tokenExists(tokenJwt)) {
                     try {
                         //Verifica token
                         log.info("Verifying token...");
@@ -84,10 +83,10 @@ public class AuthorizationFilter extends OncePerRequestFilter {
                     }
                 }else{
                     log.error("Error! Token unavailable or not found");
-                    response.setHeader("error", "Token unavailable or not found");
+                    response.setHeader("error", "Unauthorized! Token unavailable or not found");
                     response.setStatus(UNAUTHORIZED.value());
                     Map<String, String> errors = new HashMap<>();
-                    errors.put("error_message", "Token unavailable or not found");
+                    errors.put("error_message", "Unauthorized! Token unavailable or not found");
                     response.setContentType(APPLICATION_JSON_VALUE);
                     new ObjectMapper().writeValue(response.getOutputStream(), errors);
                 }

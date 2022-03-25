@@ -1,6 +1,6 @@
 package com.alten.jwtexercise.rest;
 
-import com.alten.jwtexercise.service.jwtlist.JwtListService;
+import com.alten.jwtexercise.service.jwtlist.JwTokenService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -11,16 +11,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class LogoutRestController {
 
-    private final JwtListService jwtListService;
+    private final JwTokenService jwTokenService;
 
-    public LogoutRestController(JwtListService jwtListService) {
-        this.jwtListService = jwtListService;
+    public LogoutRestController(JwTokenService jwTokenService) {
+        this.jwTokenService = jwTokenService;
     }
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@RequestHeader("Authorization") String token){
         String jwt = token.substring("Bearer ".length());
-        jwtListService.deleteToken(jwt);
+        jwTokenService.deleteToken(jwt);
         return ResponseEntity.ok().body("Logout successful!");
     }
 }

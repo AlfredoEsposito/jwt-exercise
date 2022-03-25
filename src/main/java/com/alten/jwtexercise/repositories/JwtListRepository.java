@@ -1,11 +1,11 @@
 package com.alten.jwtexercise.repositories;
 
-import com.alten.jwtexercise.domain.JwtList;
+import com.alten.jwtexercise.domain.JwToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface JwtListRepository extends JpaRepository<JwtList, Long> {
+public interface JwtListRepository extends JpaRepository<JwToken, Long> {
 
-    Optional<JwtList> findByTokenEquals(String token);
+    Optional<JwToken> findByTokenEquals(String token);
 }

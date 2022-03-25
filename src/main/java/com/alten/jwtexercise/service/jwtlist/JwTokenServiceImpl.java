@@ -1,6 +1,6 @@
 package com.alten.jwtexercise.service.jwtlist;
 
-import com.alten.jwtexercise.domain.JwtList;
+import com.alten.jwtexercise.domain.JwToken;
 import com.alten.jwtexercise.repositories.JwtListRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,17 +12,17 @@ import java.util.Optional;
 @Service
 @Transactional
 @Slf4j
-public class JwtListServiceImpl implements JwtListService{
+public class JwTokenServiceImpl implements JwTokenService {
 
     private final JwtListRepository jwtListRepository;
 
-    public JwtListServiceImpl(JwtListRepository jwtListRepository) {
+    public JwTokenServiceImpl(JwtListRepository jwtListRepository) {
         this.jwtListRepository = jwtListRepository;
     }
 
     @Override
     public boolean tokenExists(String token){
-        List<JwtList> tokens = jwtListRepository.findAll();
+        List<JwToken> tokens = jwtListRepository.findAll();
         if(tokens.stream().anyMatch(t -> (t.getToken().equals(token)))){
             return true;
         }else{
@@ -31,13 +31,13 @@ public class JwtListServiceImpl implements JwtListService{
     }
 
     @Override
-    public JwtList saveToken(String token) {
-        JwtList jwt;
+    public JwToken saveToken(String token) {
+        JwToken jwt;
         if(token==null){
             log.error("Error! Missing token");
             throw new RuntimeException("Missing token jwt!");
         }else{
-            jwt = new JwtList(token);
+            jwt = new JwToken(token);
             jwtListRepository.save(jwt);
             log.info("Jwt saved to database");
         }
@@ -46,8 +46,8 @@ public class JwtListServiceImpl implements JwtListService{
 
     @Override
     public void deleteToken(String token) {
-        Optional<JwtList> optionalJwt = jwtListRepository.findByTokenEquals(token);
-        JwtList jwt = null;
+        Optional<JwToken> optionalJwt = jwtListRepository.findByTokenEquals(token);
+        JwToken jwt = null;
         if(optionalJwt.isPresent()){
             jwt = optionalJwt.get();
             jwtListRepository.delete(jwt);

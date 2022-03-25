@@ -1,7 +1,7 @@
 package com.alten.jwtexercise.filters;
 
 import com.alten.jwtexercise.jwt.JwtConfig;
-import com.alten.jwtexercise.service.jwtlist.JwtListService;
+import com.alten.jwtexercise.service.jwtlist.JwTokenService;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import lombok.extern.slf4j.Slf4j;
@@ -28,13 +28,13 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private final AuthenticationManager authenticationManager;
     private final JwtConfig jwtConfig;
-    private final JwtListService jwtListService;
+    private final JwTokenService jwTokenService;
 
     @Autowired
-    public AuthenticationFilter(AuthenticationManager authenticationManager, JwtConfig jwtConfig, JwtListService jwtListService) {
+    public AuthenticationFilter(AuthenticationManager authenticationManager, JwtConfig jwtConfig, JwTokenService jwTokenService) {
         this.authenticationManager = authenticationManager;
         this.jwtConfig = jwtConfig;
-        this.jwtListService = jwtListService;
+        this.jwTokenService = jwTokenService;
     }
 
     //metodo che invia le credenziali dell'utente e le valida
@@ -63,6 +63,6 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
                 .sign(algorithm);
 
         response.setHeader(jwtConfig.getAuthorizationHeader(), jwtConfig.getTokenPrefix()+tokenJwt);
-        jwtListService.saveToken(tokenJwt);
+        jwTokenService.saveToken(tokenJwt);
     }
 }

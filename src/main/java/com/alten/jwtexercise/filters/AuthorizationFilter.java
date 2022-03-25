@@ -1,6 +1,8 @@
 package com.alten.jwtexercise.filters;
 
+import com.alten.jwtexercise.exception.MyCustomException;
 import com.alten.jwtexercise.jwt.JwtConfig;
+import com.alten.jwtexercise.service.jwtlist.JwtListService;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
@@ -18,24 +20,24 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Arrays.stream;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.UNAUTHORIZED;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @Slf4j
 public class AuthorizationFilter extends OncePerRequestFilter {
 
     private final JwtConfig jwtConfig;
+    private final JwtListService jwtListService;
 
     @Autowired
-    public AuthorizationFilter(JwtConfig jwtConfig) {
+    public AuthorizationFilter(JwtConfig jwtConfig, JwtListService jwtListService) {
         this.jwtConfig = jwtConfig;
+        this.jwtListService = jwtListService;
     }
 
     @Override
@@ -43,44 +45,62 @@ public class AuthorizationFilter extends OncePerRequestFilter {
         if(request.getServletPath().equals("/authn")){
             filterChain.doFilter(request, response);
         }else{
+            String tokenJwt = null;
             String authorizationHeader = request.getHeader(AUTHORIZATION);
             if(authorizationHeader!=null && authorizationHeader.startsWith("Bearer ")){
-                try {
-                    //Verifica token
-                    log.info("Verifying token...");
-                    String tokenJwt = authorizationHeader.substring("Bearer ".length());
-                    Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecretKey().getBytes());
-                    JWTVerifier verifier = JWT.require(algorithm).build();
-                    DecodedJWT decodedJWT = verifier.verify(tokenJwt);
-                    log.info("Token verified");
+                 tokenJwt = authorizationHeader.substring("Bearer ".length());
+                if(jwtListService.tokenExists(tokenJwt)) {
+                    try {
+                        //Verifica token
+                        log.info("Verifying token...");
+                        Algorithm algorithm = Algorithm.HMAC256(jwtConfig.getSecretKey().getBytes());
+                        JWTVerifier verifier = JWT.require(algorithm).build();
+                        DecodedJWT decodedJWT = verifier.verify(tokenJwt);
+                        log.info("Token verified");
 
-                    //recupero parti del token
-                    log.info("Retrieving parts of the verified token...");
-                    String username = decodedJWT.getSubject();
-                    String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
-                    Set<SimpleGrantedAuthority> authorities = new HashSet<>();
-                    stream(roles).forEach(role -> {
-                        authorities.add(new SimpleGrantedAuthority(role));
-                    });
+                        //recupero parti del token
+                        log.info("Retrieving parts of the verified token...");
+                        String username = decodedJWT.getSubject();
+                        String[] roles = decodedJWT.getClaim("roles").asArray(String.class);
+                        Set<SimpleGrantedAuthority> authorities = new HashSet<>();
+                        stream(roles).forEach(role -> {
+                            authorities.add(new SimpleGrantedAuthority(role));
+                        });
 
-                    //autenticazione il token
-                    UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
-                    SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                    log.info("Token authenticated");
+                        //autenticazione il token
+                        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                        log.info("Token authenticated");
 
-                    filterChain.doFilter(request, response);
-                }catch (Exception exception){
-                    log.error("Error: {}"+exception.getMessage());
-                    response.setHeader("error", exception.getMessage());
-                    response.setStatus(FORBIDDEN.value());
+                        filterChain.doFilter(request, response);
+                    } catch (Exception exception) {
+                        log.error("Error: {}" + exception.getMessage());
+                        response.setHeader("error", exception.getMessage());
+                        response.setStatus(FORBIDDEN.value());
+                        Map<String, String> errors = new HashMap<>();
+                        errors.put("error_message", exception.getMessage());
+                        response.setContentType(APPLICATION_JSON_VALUE);
+                        new ObjectMapper().writeValue(response.getOutputStream(), errors);
+                    }
+                }else{
+                    log.error("Error! Token unavailable or not found");
+                    response.setHeader("error", "Token unavailable or not found");
+                    response.setStatus(UNAUTHORIZED.value());
                     Map<String, String> errors = new HashMap<>();
-                    errors.put("error_message", exception.getMessage());
+                    errors.put("error_message", "Token unavailable or not found");
                     response.setContentType(APPLICATION_JSON_VALUE);
                     new ObjectMapper().writeValue(response.getOutputStream(), errors);
                 }
             }else{
-                filterChain.doFilter(request, response);
+                log.error("Error! Invalid authorization header");
+                response.setHeader("error", "Invalid authorization header");
+                response.setStatus(FORBIDDEN.value());
+                Map<String, String> errors = new HashMap<>();
+                errors.put("error_message", "Invalid authorization header");
+                response.setContentType(APPLICATION_JSON_VALUE);
+                new ObjectMapper().writeValue(response.getOutputStream(), errors);
             }
         }
     }
+
 }

@@ -1,12 +1,10 @@
 package com.alten.jwtexercise.security;
 
-import com.alten.jwtexercise.exception.AccessDeniedExeptionHandler;
 import com.alten.jwtexercise.filters.AuthenticationFilter;
 import com.alten.jwtexercise.filters.AuthorizationFilter;
 import com.alten.jwtexercise.jwt.JwtConfig;
+import com.alten.jwtexercise.service.jwtlist.JwtListService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.configurationprocessor.json.JSONException;
-import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -17,14 +15,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import javax.servlet.http.HttpServletResponse;
 
-import java.time.LocalDateTime;
-
-import static org.springframework.http.HttpStatus.FORBIDDEN;
 import static org.springframework.security.config.http.SessionCreationPolicy.STATELESS;
 
 @Configuration
@@ -35,12 +28,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final BCryptPasswordEncoder passwordEncoder;
     private final UserDetailsService userDetailsService;
     private final JwtConfig jwtConfig;
+    private final JwtListService jwtListService;
 
     @Autowired
-    public SecurityConfig(BCryptPasswordEncoder passwordEncoder, UserDetailsService userDetailsService, JwtConfig jwtConfig) {
+    public SecurityConfig(BCryptPasswordEncoder passwordEncoder, UserDetailsService userDetailsService, JwtConfig jwtConfig, JwtListService jwtListService) {
         this.passwordEncoder = passwordEncoder;
         this.userDetailsService = userDetailsService;
         this.jwtConfig = jwtConfig;
+        this.jwtListService = jwtListService;
     }
 
     @Override
@@ -51,13 +46,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable();
-        AuthenticationFilter authenticationFilter = new AuthenticationFilter(authenticationManagerBean(), jwtConfig);
+        AuthenticationFilter authenticationFilter = new AuthenticationFilter(authenticationManagerBean(), jwtConfig, jwtListService);
         authenticationFilter.setFilterProcessesUrl("/authn");
 
         http.sessionManagement().sessionCreationPolicy(STATELESS);
         http.authorizeRequests().anyRequest().authenticated();
         http.addFilter(authenticationFilter)
-            .addFilterBefore(new AuthorizationFilter(jwtConfig), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new AuthorizationFilter(jwtConfig, jwtListService), UsernamePasswordAuthenticationFilter.class);
     }
 
     @Bean

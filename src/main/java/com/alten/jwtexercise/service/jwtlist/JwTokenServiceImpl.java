@@ -1,7 +1,7 @@
 package com.alten.jwtexercise.service.jwtlist;
 
 import com.alten.jwtexercise.domain.JwToken;
-import com.alten.jwtexercise.repositories.JwtListRepository;
+import com.alten.jwtexercise.repositories.JwTokenRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,15 +14,15 @@ import java.util.Optional;
 @Slf4j
 public class JwTokenServiceImpl implements JwTokenService {
 
-    private final JwtListRepository jwtListRepository;
+    private final JwTokenRepository jwTokenRepository;
 
-    public JwTokenServiceImpl(JwtListRepository jwtListRepository) {
-        this.jwtListRepository = jwtListRepository;
+    public JwTokenServiceImpl(JwTokenRepository jwTokenRepository) {
+        this.jwTokenRepository = jwTokenRepository;
     }
 
     @Override
     public boolean tokenExists(String token){
-        List<JwToken> tokens = jwtListRepository.findAll();
+        List<JwToken> tokens = jwTokenRepository.findAll();
         if(tokens.stream().anyMatch(t -> (t.getToken().equals(token)))){
             return true;
         }else{
@@ -38,7 +38,7 @@ public class JwTokenServiceImpl implements JwTokenService {
             throw new RuntimeException("Missing token jwt!");
         }else{
             jwt = new JwToken(token);
-            jwtListRepository.save(jwt);
+            jwTokenRepository.save(jwt);
             log.info("Jwt saved to database");
         }
         return jwt;
@@ -46,11 +46,11 @@ public class JwTokenServiceImpl implements JwTokenService {
 
     @Override
     public void deleteToken(String token) {
-        Optional<JwToken> optionalJwt = jwtListRepository.findByTokenEquals(token);
+        Optional<JwToken> optionalJwt = jwTokenRepository.findByTokenEquals(token);
         JwToken jwt = null;
         if(optionalJwt.isPresent()){
             jwt = optionalJwt.get();
-            jwtListRepository.delete(jwt);
+            jwTokenRepository.delete(jwt);
             log.info("Jwt deleted");
         }else{
             log.error("Error! Missing token");
